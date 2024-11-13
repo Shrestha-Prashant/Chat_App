@@ -1,5 +1,5 @@
 require("dotenv").config();
-const express = express();
+const express = require("express");
 const bodyParser = require("body-parser");
 
 const app = express();
@@ -9,11 +9,13 @@ app.use(bodyParser.json());
 
 const userRoutes = require("./routes/userRoutes")
 
+app.use('/api/users',userRoutes)
+
 app.get("/", (req,res)=>{
     res.send("Chat application is running");
 });
 
-app.listen(PORT, ()=>{
-    console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(port, ()=>{
+    console.log(`Server is running on http://localhost:${port}`);
 });
 
