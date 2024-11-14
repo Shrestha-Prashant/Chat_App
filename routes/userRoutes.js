@@ -1,7 +1,8 @@
 const express = require("express");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs")
+const bcrypt = require("bcryptjs");
+const authenticateToken = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -25,7 +26,6 @@ router.post("/login", async (req, res) => {
       }
   
       const passwordMatch = await bcrypt.compare(password, user.password);
-      console.log(passwordMatch)
       if (!passwordMatch) {
         console.log("Password does not match");
         return res.status(401).json({ error: "Invalid credentials" });
@@ -40,5 +40,18 @@ router.post("/login", async (req, res) => {
       res.status(500).json({ error: "Login failed" });
     }
   });
+
+
+router.get("/profile", authenticateToken, async(req,res)=>{
+  try{
+    const user = await User.findByUsername(req.body.username);
+    console.log(user)
+    if(!user) return res.status(404).json({error:"User not found"});
+
+    res.json({message: "Profile data",user});
+  }catch(error){
+    res.status(500).json({error: "Failed to retrieve profile"});
+  }
+});
 
 module.exports = router;

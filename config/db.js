@@ -1,7 +1,5 @@
 require("dotenv").config();
 const pgp = require("pg-promise")();
-console.log(process.env.PORT)
-console.log(process.env.DATABASE_URL);
 const url ="postgresql://postgres:englandchelsea@localhost:5433/chat_app"
 // const db = pgp(process.env.DATABASE_URL);
 const db = pgp(url);

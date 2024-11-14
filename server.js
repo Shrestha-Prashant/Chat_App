@@ -8,7 +8,6 @@ const port = process.env.PORT || 5000;
 app.use(bodyParser.json());
 
 const userRoutes = require("./routes/userRoutes")
-
 app.use('/api/users',userRoutes)
 
 app.get("/", (req,res)=>{
