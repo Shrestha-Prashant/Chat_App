@@ -1,8 +1,8 @@
-const express = require("express");
-const User = require("../models/user");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const authenticateToken = require("../middleware/auth");
+import express from "express"
+import User from "../models/user.js";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import authenticateToken from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -54,4 +54,4 @@ router.get("/profile", authenticateToken, async(req,res)=>{
   }
 });
 
-module.exports = router;
+export default router;

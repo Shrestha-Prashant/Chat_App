@@ -1,10 +1,14 @@
 {
+  "name": "Chat_App",
+  "version": "1.0.0",
+  "type" : "module",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
+    "matrix-js-sdk": "^34.11.1",
     "nodemon": "^3.1.7",
     "pg-promise": "^11.10.2"
   },
