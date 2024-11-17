@@ -12,23 +12,17 @@ router.post("/register", async(req,res)=>{
     const {username,password} = req.body;
     try{
         //Adding the user in the user table
-        // const user = await User.create(username,password);
-        // console.log(user)
-        // console.log("I")
-        // if(!user){
-        //   res.status(500).json("User registration could not be achieved");
-        // } 
-        console.log("working till before matrix register")
+        const user = await User.create(username,password);
+        if(!user){
+          res.status(500).json("User registration could not be achieved");
+        } 
+
         //Creating a profile for user in matrix
         const matrixRegistration = await axios.post('http://localhost:3000/api/chats/register',{username,password});
-        console.log(matrixRegistration)
         if(!matrixRegistration){
           res.status(500).json("User registration into matrix failed")
         }
-        //login the user to get the access_token
-        const userlogin = await axios.post('http://localhost:3000/api/chats/login',{username,password})
-        console.log(userlogin)
-        const matrix_instance = User.matrix_instance(userlogin.user_id, userlogin.access_token)
+        const matrix_instance = User.matrix_instance(matrixRegistration.data.user.user_id, matrixRegistration.data.user.access_token, user.user_id)
         if(!matrix_instance){
           res.status(500).json({message:"failed to store user data in database"})
         }  
@@ -44,7 +38,6 @@ router.post("/login", async (req, res) => {
     try {
       const user = await User.findByUsername(username);
       if (!user) {
-        console.log("User not found");
         return res.status(401).json({ error: "Invalid credentials" });
       }
   

@@ -16,9 +16,9 @@ class User{
         }
     }
 
-    static async matrix_instance(userId, accesstoken){
-        const matrix_user_creation_query = `INSERT INTO matrixInfo(userId, accesstoken) VALUES($1,$2) RETURNING *`
-        const values_for_matrix = [userId,accesstoken]
+    static async matrix_instance(userId, accesstoken,systemId){
+        const matrix_user_creation_query = `INSERT INTO matrixInfo(userId, accesstoken, systemId) VALUES($1,$2,$3) RETURNING *`
+        const values_for_matrix = [userId,accesstoken,systemId]
 
         try{
             const matrix_instance = await db.one(matrix_user_creation_query,values_for_matrix);

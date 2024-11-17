@@ -7,8 +7,6 @@ const router = express.Router();
 //Registering a new matrix user 
 router.post("/register", async(req,res)=> {
     const {username, password} = req.body;
-    console.log("inside matrix register")
-    console.log(username,password)
     try{
         const user = await MatrixService.registerUser(username, password);
         res.status(201).json({message:"Matrix user registered", user});
