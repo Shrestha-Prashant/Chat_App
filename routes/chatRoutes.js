@@ -4,10 +4,11 @@ import MatrixService from "../services/matrixService.js";
 
 const router = express.Router();
 
-//registering a new matrix user and create a chat room
-router.post("/register", authenticateToken, async(req,res)=> {
+//Registering a new matrix user 
+router.post("/register", async(req,res)=> {
     const {username, password} = req.body;
-
+    console.log("inside matrix register")
+    console.log(username,password)
     try{
         const user = await MatrixService.registerUser(username, password);
         res.status(201).json({message:"Matrix user registered", user});
@@ -28,7 +29,31 @@ router.post("/createRoom", authenticateToken, async(req,res)=>{
     }
 });
 
-//sending a message in a room
+//Adding user to rooms
+router.post("/addUserToRoom", authenticateToken, async(req,res)=> {
+    const {roomId, userId} = req.body;
+
+    try{
+        const response = await MatrixService.addUserToRoom(roomId, userId);
+        res.status(200).json({message: "User invited sucessfully"})
+    }catch(error){
+        res.status(500).json({error:"Failed ot invite user", details: error.message});
+    }
+});
+
+//Accepting the invitation
+router.post("/acceptInvite", authenticateToken, async(req,res)=>{
+    const {roomId, userId} = req.body;
+
+    try{
+        const reponse = await MatrixService.acceptInvite(roomId, userId);
+        res.status(200).json({message: "Invitation accepted"})
+    }catch(error){
+        res.status(500).json({error: "Failed to accept the invitation.", details: error.message})
+    }
+})
+
+//Sending a message in a room
 router.post("/sendMessage",authenticateToken, async(req,res)=>{
     const {roomId, message} = req.body;
 
@@ -51,5 +76,6 @@ router.get("/:roomId/messages", authenticateToken, async(req,res)=>{
         res.status(500).json({error:"Failed to retrieve messages"});
     }
 });
+
 
 export default router;

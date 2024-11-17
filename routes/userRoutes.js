@@ -3,21 +3,44 @@ import User from "../models/user.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import authenticateToken from "../middleware/auth.js";
+import axios from 'axios';
 
 const router = express.Router();
 
+//Registering a new user into the system
 router.post("/register", async(req,res)=>{
     const {username,password} = req.body;
     try{
-        const user = await User.create(username,password);
+        //Adding the user in the user table
+        // const user = await User.create(username,password);
+        // console.log(user)
+        // console.log("I")
+        // if(!user){
+        //   res.status(500).json("User registration could not be achieved");
+        // } 
+        console.log("working till before matrix register")
+        //Creating a profile for user in matrix
+        const matrixRegistration = await axios.post('http://localhost:3000/api/chats/register',{username,password});
+        console.log(matrixRegistration)
+        if(!matrixRegistration){
+          res.status(500).json("User registration into matrix failed")
+        }
+        //login the user to get the access_token
+        const userlogin = await axios.post('http://localhost:3000/api/chats/login',{username,password})
+        console.log(userlogin)
+        const matrix_instance = User.matrix_instance(userlogin.user_id, userlogin.access_token)
+        if(!matrix_instance){
+          res.status(500).json({message:"failed to store user data in database"})
+        }  
         res.status(201).json({message:"User registered", user});
     }catch(error){
         res.status(500).json({error: "Registration failed"});
     }
 });
 
+//Login a user into the system
 router.post("/login", async (req, res) => {
-    const { username, password } = req.body;
+  const { username, password } = req.body;
     try {
       const user = await User.findByUsername(username);
       if (!user) {
@@ -41,7 +64,7 @@ router.post("/login", async (req, res) => {
     }
   });
 
-
+//Profile details of the user
 router.get("/profile", authenticateToken, async(req,res)=>{
   try{
     const user = await User.findByUsername(req.body.username);
