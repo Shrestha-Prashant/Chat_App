@@ -4,13 +4,14 @@ import dotenv from "dotenv";
 dotenv.config();
 import axios from "axios";
 import crypto from "crypto"
+import { access } from "fs";
 
 // Initializing a client with the admin user credentials
-const MatrixClient = async (req) =>{
+const MatrixClient = async (userId,accessToken) =>{
     return sdk.createClient({
         baseUrl: 'http://localhost:8008',
-        accessToken: req.body.access_token,
-        userId: req.body.userId             //request body needs to have userId and accessToken
+        accessToken: accessToken,
+        userId: userId             //request body needs to have userId and accessToken
     })
 } 
 
@@ -74,18 +75,12 @@ class MatrixService {
     }
 
     //Creating a new room (chat session)
-    static async createRoom(isGroupChat, roomName = null){
+    static async createRoom(userId,accessToken,inviteUserId,isGroupChat=false,roomName = null){
         try{
-            const matrixClient = await MatrixClient(req);
-            // const matrixClient = sdk.createClient({
-            //     baseUrl: "http://localhost:8008",
-            //     accessToken: "req.body.access_token",        
-            //     userId
-            // });
-            const options = isGroupChat? {name:roomName, preset:"public_chat"} : {preset:"trusted_private_chat"}
-
+            const matrixClient = await MatrixClient(userId,accessToken);
+            const options = isGroupChat? {name:roomName, preset:"public_chat"} : {invite:[inviteUserId], preset:"trusted_private_chat"}
             const room = await matrixClient.createRoom(options);
-            res.status(200).json({roomId:room.room_id, room})
+            return room;
         }catch(error){
             console.error("Failed to create room:",error.message);
             throw error;

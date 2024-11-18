@@ -4,9 +4,12 @@ import express from "express";
 import bodyParser from "body-parser";
 import userRoutes from "./routes/userRoutes.js"
 import chatRoutes from "./routes/chatRoutes.js"
+import fetch from "node-fetch"
 
 const app = express();
 const port = process.env.PORT || 5000;
+
+global.fetch = fetch;
 
 app.use(bodyParser.json());
 
