@@ -1,3 +1,4 @@
+import { THREAD_RELATION_TYPE } from "matrix-js-sdk";
 import db from "../config/db.js";
 import bcrypt from "bcryptjs";
 
@@ -35,6 +36,19 @@ class User{
             return user;
         }catch(error){
             throw new Error("User lookup failed: " + error.message);
+        }
+    }
+
+    static async findByMatrixId(userId){
+        const query = `SELECT * FROM users WHERE user_id = (
+            SELECT systemId FROM matrixInfo WHERE userId = $1
+        )`;
+
+        try{
+            const user = await db.oneOrNone(query,[userId]);
+            return user;
+        }catch(error){
+            throw new Error("User lookup failed: " + error.message)
         }
     }
 }

@@ -11,7 +11,7 @@ const MatrixClient = async (userId,accessToken) =>{
     return sdk.createClient({
         baseUrl: 'http://localhost:8008',
         accessToken: accessToken,
-        userId: userId             //request body needs to have userId and accessToken
+        userId: userId             
     })
 } 
 
@@ -35,7 +35,7 @@ function generateMac(nonce, user, password, admin=false, userType=null, sharedSe
 }
 
 class MatrixService {
-    //Registering a new Matrix user
+    //Registering a new Matrix users
     static async registerUser(username,password){
         try{
             const url = "http://localhost:8008/_synapse/admin/v1/register";
@@ -95,6 +95,60 @@ class MatrixService {
             return response.message;
         }catch(error){
             console.error("Failed to add user to room:",error.message);
+        }
+    }
+
+    // Load invitations for the user
+    static async listInvitations(userId, accessToken) {
+        try {
+            const matrixClient = await MatrixClient(userId,accessToken);
+    
+            // Start syncing to get the latest state
+            matrixClient.startClient({
+                initialSyncLimit: 10, // Number of events to fetch in the initial sync
+            });
+    
+            return new Promise((resolve, reject) => {
+                const invitedRooms = [];
+    
+                // Listen for sync completion
+                matrixClient.once("sync", (state) => {
+                    if (state === "ERROR") {
+                        reject(new Error("Failed to sync with the server."));
+                    }
+                });
+    
+                // Listen for room updates
+                matrixClient.on("Room", (room) => {
+                    if (room.getMyMembership() === "invite") {
+                        // Safely retrieve room invitation details
+                        const roomNameEvent = room.currentState.getStateEvents("m.room.name", "");
+                        const roomName =
+                            roomNameEvent?.getContent()?.name || "Unnamed Room";
+    
+                        const inviterEvent = room.currentState.getStateEvents(
+                            "m.room.member",
+                            userId
+                        );
+                        const inviter = inviterEvent?.getSender?.() || "Unknown Inviter";
+    
+                        invitedRooms.push({
+                            roomId: room.roomId,
+                            name: roomName,
+                            inviter: inviter,
+                        });
+                    }
+                });
+    
+                // Allow some time for invitations to be processed
+                setTimeout(() => {
+                    matrixClient.stopClient(); // Stop the client after processing
+                    resolve(invitedRooms);
+                }, 3000); // Adjust timeout as needed
+            });
+        } catch (error) {
+            console.error("Failed to list invitations:", error.message);
+            throw error;
         }
     }
 

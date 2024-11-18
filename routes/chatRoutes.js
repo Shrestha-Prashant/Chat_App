@@ -1,6 +1,7 @@
 import express from "express";
 import authenticateToken from "../middleware/auth.js";
 import MatrixService from "../services/matrixService.js";
+import User from "../models/user.js";
 
 const router = express.Router();
 
@@ -41,8 +42,40 @@ router.post("/addUserToRoom", authenticateToken, async(req,res)=> {
     }
 });
 
+//Listing user's invitation
+// router.get("/listInvitations",authenticateToken, async(req,res)=>{
+router.get("/listInvitations", async(req,res)=>{
+    const {userId,accessToken}= req.body;
+    try{
+        let invitations = await MatrixService.listInvitations(userId,accessToken);
+
+        const updatedInvitations = await Promise.all(
+            invitations.map(async(invitation) => {
+                try{
+                    const inviterDetails = await User.findByMatrixId(invitation.inviter)
+
+                    return {
+                        ...invitation,
+                        inviter: inviterDetails ? inviterDetails.username : "Unknown User"
+                    }
+                }catch(error){
+                    console.log(`Failed to lookup inviter ${invitation.inviter}`, error.message)
+                    return invitation;
+                }
+                
+            })
+        );
+
+        res.status(200).json(updatedInvitations)
+    }catch(error){
+        console.error("Failed to load invitations", error.message);
+        res.status(500).json({error: "Failed to load invitations", details: error.message})
+    }
+})
+
 //Accepting the invitation
-router.post("/acceptInvite", authenticateToken, async(req,res)=>{
+// router.post("/acceptInvite", authenticateToken, async(req,res)=>{
+router.post("/acceptInvite", async(req,res)=>{    
     const {roomId, userId} = req.body;
 
     try{
