@@ -78,11 +78,11 @@ class MatrixService {
     static async createRoom(userId,accessToken,inviteUserId,isGroupChat=false,roomName = null){
         try{
             const matrixClient = await MatrixClient(userId,accessToken);
-            const options = isGroupChat? {name:roomName, preset:"public_chat"} : {invite:[inviteUserId], preset:"trusted_private_chat"}
+            const options = isGroupChat? {name:roomName,invite:inviteUserId ,preset:"trusted_private_chat"} : {invite:[inviteUserId], preset:"trusted_private_chat"}
             const room = await matrixClient.createRoom(options);
             return room;
         }catch(error){
-            console.error("Failed to create room:",error.message);
+            console.error("Failed to create room:", error.response || error.message || error);
             throw error;
         }
     }

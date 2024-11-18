@@ -19,27 +19,14 @@ router.post("/register", async(req,res)=> {
 // router.post("/createRoom", authenticateToken, async(req,res)=>{
 router.post("/createRoom", async(req,res)=>{
     //send isGroupChat from frontend as true or false
-    if(req.body.isGroupChat){
-        // const {isGroupChat,roomName} = req.body
-        // try{
-        //     const room = await MatrixService.createRoom(isGroupChat, roomName);
-        //     res.status(201).json({message:"Room created", room});
-        // }catch(error){
-        //     res.status(500).json({error:"Failed to create room"});
-        // }
+    // userId -> matrix user id, accessToken -> matrix access token, inviteUserId -> request receiver userI
+    const {userId, accessToken, inviteUserId, isGroupChat,roomName=null} = req.body
+    try{
+        const room = await MatrixService.createRoom(userId,accessToken,inviteUserId,isGroupChat, roomName);
+        res.status(201).json({message:"Room created", room});
+    }catch(error){
+        res.status(500).json({error:"Failed to create room"});
     }
-    else{
-        // userId -> matrix user id, accessToken -> matrix access token, inviteUserId -> request receiver userId
-        const {userId, accessToken,inviteUserId,isGroupChat} = req.body;
-        try{
-            console.log("Should call here");
-            console.log(req.body)
-            const room = await MatrixService.createRoom(userId,accessToken,inviteUserId,isGroupChat,null); 
-            res.status(201).json({message:"Room created", room});
-        }catch(error){
-            res.status(500).json({error:"Failed to create room"});
-        }
-    }  
 });
 
 //Adding user to rooms
