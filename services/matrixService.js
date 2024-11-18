@@ -153,16 +153,10 @@ class MatrixService {
     }
 
     //Accepting the invite to a room
-    static async acceptInvite(roomId, userId){
+    static async acceptInvite(roomId, userId, accessToken){
         try{
-            const matrixClient = await MatrixClient(req);
-            // //Login the user 
-            // const userClient = createClient({
-            //     baseUrl: "http://localhost:8008",
-            //     accessToken: "accepting_user_token_required_here",
-            //     userId
-            // })
-            const reponse = await userClient.joinRoom(roomId);
+            const matrixClient = await MatrixClient(userId, accessToken);
+            const response = await matrixClient.joinRoom(roomId);
             return response;
         }catch(error){
             console.error("Failed to accept invite:", error.message)
