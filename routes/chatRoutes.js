@@ -2,6 +2,7 @@ import express, { response } from "express";
 import authenticateToken from "../middleware/auth.js";
 import MatrixService from "../services/matrixService.js";
 import User from "../models/user.js";
+import { THREAD_RELATION_TYPE } from "matrix-js-sdk";
 
 const router = express.Router();
 
@@ -45,7 +46,7 @@ router.post("/addUserToRoom", authenticateToken, async(req,res)=> {
 //Listing user's invitation
 // router.get("/listInvitations",authenticateToken, async(req,res)=>{
 router.get("/listInvitations", async(req,res)=>{
-    const {userId,accessToken}= req.body;
+    const {userId,accessToken} = req.query;
     try{
         let invitations = await MatrixService.listInvitations(userId,accessToken);
 
@@ -70,6 +71,16 @@ router.get("/listInvitations", async(req,res)=>{
     }catch(error){
         console.error("Failed to load invitations", error.message);
         res.status(500).json({error: "Failed to load invitations", details: error.message})
+    }
+})
+
+router.get("/loadrooms",async (req,res) => {
+    const {userId,accessToken} = req.query;
+    try{
+        const rooms = await MatrixService.loadRooms(userId,accessToken)
+        res.status(200).json(rooms)
+    }catch(error){
+        console.error("Failed to load rooms", error.message)
     }
 })
 
