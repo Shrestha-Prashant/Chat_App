@@ -125,13 +125,14 @@ class MatrixService {
                         const roomNameEvent = room.currentState.getStateEvents("m.room.name", "");
                         const roomName =
                             roomNameEvent?.getContent()?.name || "Unnamed Room";
-    
+
                         const inviterEvent = room.currentState.getStateEvents(
                             "m.room.member",
                             userId
                         );
+
                         const inviter = inviterEvent?.getSender?.() || "Unknown Inviter";
-    
+
                         invitedRooms.push({
                             roomId: room.roomId,
                             name: roomName,
@@ -164,9 +165,9 @@ class MatrixService {
     }
 
     //Send a message in a room
-    static async sendMessage(roomId, senderId, message){
+    static async sendMessage(roomId,senderId, message, accessToken){
         try{
-            const matrixClient = await MatrixClient(req);
+            const matrixClient = await MatrixClient(senderId,accessToken);
             await matrixClient.sendEvent(roomId, "m.room.message", {
                 msgtype: "m.text",
                 body: message

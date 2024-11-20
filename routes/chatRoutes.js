@@ -87,11 +87,12 @@ router.post("/acceptInvite", async(req,res)=>{
 })
 
 //Sending a message in a room
-router.post("/sendMessage",authenticateToken, async(req,res)=>{
-    const {roomId, message} = req.body;
+// router.post("/sendMessage",authenticateToken, async(req,res)=>{
+router.post("/:roomId/sendMessage", async(req,res)=>{
+    const {senderId, message, accessToken} = req.body;
 
     try{
-        await MatrixService.sendMessage(roomId, req.user.userId, message);
+        await MatrixService.sendMessage(req.params.roomId,senderId, message,accessToken);
         res.status(201).json({message:"Message sent"});
     }catch(error){
         res.status(500).json({error:"Failed to send message"});
