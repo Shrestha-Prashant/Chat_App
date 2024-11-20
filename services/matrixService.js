@@ -179,9 +179,9 @@ class MatrixService {
     }
 
     //Get message from a room
-    static async getMessage(roomId){
+    static async getMessage(roomId,userId,accessToken){
         try{
-            const matrixClient = await MatrixClient(req);
+            const matrixClient = await MatrixClient(userId,accessToken);
             const response = await matrixClient.roomInitialSync(roomId);
             return response.messages;
         }catch(error){

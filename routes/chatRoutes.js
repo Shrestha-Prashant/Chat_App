@@ -1,4 +1,4 @@
-import express from "express";
+import express, { response } from "express";
 import authenticateToken from "../middleware/auth.js";
 import MatrixService from "../services/matrixService.js";
 import User from "../models/user.js";
@@ -100,12 +100,20 @@ router.post("/:roomId/sendMessage", async(req,res)=>{
 });
 
 //Getting message from a room
-router.get("/:roomId/messages", authenticateToken, async(req,res)=>{
+// router.get("/:roomId/messages", authenticateToken, async(req,res)=>{
+router.get("/:roomId/messages", async(req,res)=>{
     const {roomId} = req.params;
+    const {userId, accessToken} = req.query;
 
     try{
-        const messages = await MatrixService.getMessage(roomId);
-        res.json({messages});
+        const response = await MatrixService.getMessage(roomId,userId,accessToken);   
+        const messages = response.chunk
+            .filter(obj => obj.type == 'm.room.message')  
+            .map(obj=> ({
+                    senderId: obj.sender,
+                    message: obj.content.msgtype === "m.text" ? obj.content.body : obj.content.file
+            }))
+        res.json({messages})
     }catch(error){
         res.status(500).json({error:"Failed to retrieve messages"});
     }
