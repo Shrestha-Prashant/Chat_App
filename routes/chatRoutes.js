@@ -2,7 +2,6 @@ import express, { response } from "express";
 import authenticateToken from "../middleware/auth.js";
 import MatrixService from "../services/matrixService.js";
 import User from "../models/user.js";
-import { THREAD_RELATION_TYPE } from "matrix-js-sdk";
 
 const router = express.Router();
 
@@ -18,8 +17,7 @@ router.post("/register", async(req,res)=> {
 });
 
 //Creating a chat room
-// router.post("/createRoom", authenticateToken, async(req,res)=>{
-router.post("/createRoom", async(req,res)=>{
+router.post("/createRoom", authenticateToken, async(req,res)=>{
     //send isGroupChat from frontend as true or false
     // userId -> matrix user id, accessToken -> matrix access token, inviteUserId -> request receiver userI
     const {userId, accessToken, inviteUserId, isGroupChat,roomName=null} = req.body
@@ -32,11 +30,13 @@ router.post("/createRoom", async(req,res)=>{
 });
 
 //Adding user to rooms
-router.post("/addUserToRoom", authenticateToken, async(req,res)=> {
-    const {roomId, userId} = req.body;
+// router.post("/addUserToRoom", authenticateToken, async(req,res)=> {
+router.post("/addUserToRoom", async(req,res)=> {
+const {roomId, userId, accessToken} = req.body;
 
     try{
-        const response = await MatrixService.addUserToRoom(roomId, userId);
+        const response = await MatrixService.addUserToRoom(roomId, userId, accessToken);
+        console.log(response)
         res.status(200).json({message: "User invited sucessfully"})
     }catch(error){
         res.status(500).json({error:"Failed ot invite user", details: error.message});
@@ -74,6 +74,7 @@ router.get("/listInvitations", async(req,res)=>{
     }
 })
 
+//Load the rooms joined by user
 router.get("/loadrooms",async (req,res) => {
     const {userId,accessToken} = req.query;
     try{

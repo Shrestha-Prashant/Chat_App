@@ -88,10 +88,11 @@ class MatrixService {
     }
 
     //Add user to the room (sending invitation)
-    static async addUserToRoom(roomId, userId){
+    static async addUserToRoom(roomId, userId, accessToken){
         try{
-            const matrixClient = await MatrixClient(req);
+            const matrixClient = await MatrixClient(userId,accessToken);
             const response = await matrixClient.invite(roomId, userId);
+            console.log(response)
             return response.message;
         }catch(error){
             console.error("Failed to add user to room:",error.message);
@@ -102,6 +103,7 @@ class MatrixService {
     static async listInvitations(userId, accessToken) {
         try {
             const matrixClient = await MatrixClient(userId,accessToken);
+            console.log(matrixClient)
     
             // Start syncing to get the latest state
             matrixClient.startClient({
@@ -154,30 +156,6 @@ class MatrixService {
     }
 
     //List joined rooms
-    // static async loadRooms(userId,accessToken){
-    //     try{
-    //         const matrixClient = await MatrixClient(userId,accessToken)
-    //         const rooms = await matrixClient.getJoinedRooms()
-    //         const roomDetails = {};
-
-    //         for(const roomId of rooms.joined_rooms){
-    //             try{
-    //                 const roomState = await matrixClient.getRoomState(roomId);
-    //                 const nameEvent = roomState.find(event=> event.type === "m.room.name");
-    //                 const aliasEvent = roomState.find(event=> event.type === "m.room.canonical_alias");
-    //                 const roomName = nameEvent?.content?.name || aliasEvent?.content?.alias || "Unnamed Room";
-
-    //                 roomDetails[roomId] = roomName;
-    //             }catch(error){
-    //                 console.error(`Failed to load room details for ${roomId}: ${error.message}`);
-    //                 roomDetails[roomId] = "Unknown Room"
-    //             }
-    //         }
-    //         return roomDetails;
-    //     }catch(error){
-    //         console.error("Failed to load rooms:", error.message)
-    //     }
-    // }
     static async loadRooms(userId, accessToken) {
         try {
             const matrixClient = await MatrixClient(userId,accessToken)
