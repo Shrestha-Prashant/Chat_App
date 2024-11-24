@@ -4,14 +4,14 @@ import dotenv from "dotenv";
 dotenv.config();
 import axios from "axios";
 import crypto from "crypto"
-import { access } from "fs";
+import queryMembershipSnapshots from "../models/synapse.js";
 
 // Initializing a client with the admin user credentials
 const MatrixClient = async (userId,accessToken) =>{
     return sdk.createClient({
         baseUrl: 'http://localhost:8008',
         accessToken: accessToken,
-        userId: userId             
+        userId: userId,     
     })
 } 
 
@@ -80,7 +80,12 @@ class MatrixService {
             const matrixClient = await MatrixClient(userId,accessToken);
             const options = isGroupChat? {name:roomName,invite:inviteUserId ,preset:"trusted_private_chat"} : {invite:[inviteUserId], preset:"trusted_private_chat"}
             const room = await matrixClient.createRoom(options);
-            return room;
+            if(validateRoomCreation){
+                return room;
+            }
+            else{
+                return null
+            }
         }catch(error){
             console.error("Failed to create room:", error.response || error.message || error);
             throw error;
@@ -99,61 +104,17 @@ class MatrixService {
         }
     }
 
-    // Load invitations for the user
-    static async listInvitations(userId, accessToken) {
+    static async listInvitations(userId,accessToken) {
         try {
-            const matrixClient = await MatrixClient(userId,accessToken);
-            console.log(matrixClient)
-    
-            // Start syncing to get the latest state
-            matrixClient.startClient({
-                initialSyncLimit: 10, // Number of events to fetch in the initial sync
-            });
-    
-            return new Promise((resolve, reject) => {
-                const invitedRooms = [];
-    
-                // Listen for sync completion
-                matrixClient.once("sync", (state) => {
-                    if (state === "ERROR") {
-                        reject(new Error("Failed to sync with the server."));
-                    }
-                });
-    
-                // Listen for room updates
-                matrixClient.on("Room", (room) => {
-                    if (room.getMyMembership() === "invite") {
-                        // Safely retrieve room invitation details
-                        const roomNameEvent = room.currentState.getStateEvents("m.room.name", "");
-                        const roomName =
-                            roomNameEvent?.getContent()?.name || "Unnamed Room";
-
-                        const inviterEvent = room.currentState.getStateEvents(
-                            "m.room.member",
-                            userId
-                        );
-
-                        const inviter = inviterEvent?.getSender?.() || "Unknown Inviter";
-
-                        invitedRooms.push({
-                            roomId: room.roomId,
-                            name: roomName,
-                            inviter: inviter,
-                        });
-                    }
-                });
-    
-                // Allow some time for invitations to be processed
-                setTimeout(() => {
-                    matrixClient.stopClient(); // Stop the client after processing
-                    resolve(invitedRooms);
-                }, 3000); // Adjust timeout as needed
-            });
+            await MatrixClient(userId,accessToken);
+            const response = await queryMembershipSnapshots(userId);
+            return response;
         } catch (error) {
-            console.error("Failed to list invitations:", error.message);
+            console.error("Error fetching room invitations:", error.message);
             throw error;
         }
     }
+    
 
     //List joined rooms
     static async loadRooms(userId, accessToken) {
@@ -195,6 +156,7 @@ class MatrixService {
     }
 
     //Send a message in a room
+    // addition of a file in message
     static async sendMessage(roomId,senderId, message, accessToken){
         try{
             const matrixClient = await MatrixClient(senderId,accessToken);

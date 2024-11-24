@@ -20,6 +20,13 @@ listeners:
       - names: [client, federation]
         compress: false
 
+  - port: 8090
+    type: http
+    tls: true
+    bind_addresses: ['0.0.0.0']
+    resources:
+    - names: [client,federation]
+
 database:
   name: sqlite3
   args: 
@@ -36,6 +43,10 @@ trusted_key_servers:
 enable_registration: true
 enable_registration_without_verification: true 
 enable_user_management_api: true 
+tls_certificate_path: "/data/fullchain.pem"
+tls_private_key_path: "/data/privkey.pem"
+default_filter_collection:
+  timeline_limit: 10
 
 
 # vim:ft=yaml

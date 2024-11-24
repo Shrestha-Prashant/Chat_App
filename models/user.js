@@ -1,4 +1,3 @@
-import { THREAD_RELATION_TYPE } from "matrix-js-sdk";
 import db from "../config/db.js";
 import bcrypt from "bcryptjs";
 
@@ -49,6 +48,21 @@ class User{
             return user;
         }catch(error){
             throw new Error("User lookup failed: " + error.message)
+        }
+    }
+
+    static async getAccessToken(userId){
+        const username = userId.split(":")[0].replace("@", "");
+        const query= `SELECT * FROM matrixInfo WHERE systemid = (
+                SELECT user_id FROM users WHERE username = $1
+        )`;
+
+        try{
+            const token = await db.one(query,[username]);
+            console.log(token)
+            return token.accesstoken;
+        }catch(error){
+            throw new Error("Failed to retrieve access token: " + error.message)
         }
     }
 }
