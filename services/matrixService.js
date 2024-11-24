@@ -74,23 +74,102 @@ class MatrixService {
         }
     }
 
-    //Creating a new room (chat session)
-    static async createRoom(userId,accessToken,inviteUserId,isGroupChat=false,roomName = null){
-        try{
-            const matrixClient = await MatrixClient(userId,accessToken);
-            const options = isGroupChat? {name:roomName,invite:inviteUserId ,preset:"trusted_private_chat"} : {invite:[inviteUserId], preset:"trusted_private_chat"}
+    static async createRoom(userId, accessToken, inviteUserId, isGroupChat = false, roomName = null) {
+        try {
+            const matrixClient = await MatrixClient(userId, accessToken);
+
+            const options = {
+                name: roomName,
+                preset: "trusted_private_chat",
+                visibility: "private",
+                initial_state: [{
+                    type: "m.room.encryption",
+                    state_key: "",
+                    content: {
+                        algorithm: "m.megolm.v1.aes-sha2"
+                    }
+                }],
+                initial_state: [
+                    {
+                        type: 'm.room.history_visibility',
+                        content: {
+                            history_visibility: 'world-readable'  // Allows message history to be viewed by anyone
+                        },
+                        state_key: ''
+                    },
+                    {
+                        type: 'm.room.guest_access',
+                        content: {
+                            guest_access: 'can_join'  // Allows guests to join
+                        },
+                        state_key: ''
+                    },
+                    {
+                        type: 'm.room.join_rules',
+                        content: {
+                            join_rule: isGroupChat ? 'public' : 'public'
+                        },
+                        state_key: ''
+                    },
+                    {
+                        type: 'm.room.preview_urls',
+                        content: {
+                            allow: true,
+                            allow_domains: ['*']
+                        },
+                        state_key: ''
+                    }
+                ]
+            };
+
+            if (isGroupChat) {
+                options.preset = "private_chat";
+                options.power_level_content_override = {
+                    users_default: 0,
+                    events_default: 0,
+                    state_default: 50,
+                    ban: 50,
+                    kick: 50,
+                    redact: 50,
+                    invite: 0,
+                    events: {
+                        "m.room.name": 50,
+                        "m.room.avatar": 50,
+                        "m.room.canonical_alias": 50,
+                        "m.room.history_visibility": 100,
+                        "m.room.power_levels": 100
+                    }
+                };
+            }
+
             const room = await matrixClient.createRoom(options);
-            if(validateRoomCreation){
-                return room;
-            }
-            else{
-                return null
-            }
-        }catch(error){
-            console.error("Failed to create room:", error.response || error.message || error);
+            const invitedUserIds = Array.isArray(inviteUserId) ? inviteUserId : [inviteUserId];
+
+            const invitePromises = invitedUserIds.map(async (id) => {
+                try {
+                    await matrixClient.invite(room.room_id, id);
+                    return { userId: id, status: 'invited' };
+                } catch (inviteError) {
+                    console.error(`Failed to invite user ${id}:`, inviteError);
+                    return { userId: id, status: 'failed', error: inviteError.message };
+                }
+            });
+
+            const inviteResults = await Promise.all(invitePromises);
+            
+            // Stop the client after operations are complete
+            matrixClient.stopClient();
+
+            return {
+                room,
+                inviteResults
+            };
+        } catch (error) {
+            console.error("Failed to create room:", error.response?.data || error.message || error);
             throw error;
         }
     }
+
 
     //Add user to the room (sending invitation)
     static async addUserToRoom(roomId, userId, accessToken){
@@ -147,9 +226,9 @@ class MatrixService {
     //Accepting the invite to a room
     static async acceptInvite(roomId, userId, accessToken){
         try{
-            const matrixClient = await MatrixClient(userId, accessToken);
+            const matrixClient = await MatrixClient(userId, accessToken);            
             const response = await matrixClient.joinRoom(roomId);
-            return response;
+            return response.roomId;
         }catch(error){
             console.error("Failed to accept invite:", error.message)
         }

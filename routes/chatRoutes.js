@@ -67,11 +67,13 @@ router.get("/loadrooms",async (req,res) => {
 })
 
 //Accepting the invitation
-router.post("/acceptInvite", authenticateToken, async(req,res)=>{ 
+// router.post("/acceptInvite", authenticateToken, async(req,res)=>{ 
+router.post("/acceptInvite", async(req,res)=>{ 
     const {roomId, userId, accessToken} = req.body;
 
     try{
         const response = await MatrixService.acceptInvite(roomId, userId, accessToken);
+        console.log(response)
         res.status(200).json({message: "Invitation accepted"})
     }catch(error){
         res.status(500).json({error: "Failed to accept the invitation.", details: error.message})
