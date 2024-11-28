@@ -42,12 +42,11 @@ const {roomId, userId, accessToken} = req.body;
 });
 
 //Listing user's invitation
-// router.get("/listInvitations",authenticateToken, async(req,res)=>{
-router.get("/listInvitations", async(req,res)=>{
+router.get("/listInvitations",authenticateToken, async(req,res)=>{
     const {userId,accessToken} = req.query;
     try{
         let invitations = await MatrixService.listInvitations(userId,accessToken);
-        console.log(invitations)
+        // console.log(invitations)
         res.status(200).json(invitations)
     }catch(error){
         console.error("Failed to load invitations", error.message);
@@ -67,8 +66,7 @@ router.get("/loadrooms",async (req,res) => {
 })
 
 //Accepting the invitation
-// router.post("/acceptInvite", authenticateToken, async(req,res)=>{ 
-router.post("/acceptInvite", async(req,res)=>{ 
+router.post("/acceptInvite", authenticateToken, async(req,res)=>{ 
     const {roomId, userId, accessToken} = req.body;
 
     try{

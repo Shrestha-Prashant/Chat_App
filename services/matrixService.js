@@ -1,4 +1,3 @@
-import { response } from "express";
 import sdk from "matrix-js-sdk";
 import dotenv from "dotenv";
 dotenv.config();
@@ -176,7 +175,6 @@ class MatrixService {
         try{
             const matrixClient = await MatrixClient(userId,accessToken);
             const response = await matrixClient.invite(roomId, userId);
-            console.log(response)
             return response.message;
         }catch(error){
             console.error("Failed to add user to room:",error.message);
@@ -185,9 +183,12 @@ class MatrixService {
 
     static async listInvitations(userId,accessToken) {
         try {
-            await MatrixClient(userId,accessToken);
-            const response = await queryMembershipSnapshots(userId);
-            return response;
+            const user_exists = await MatrixClient(userId,accessToken);
+            if(user_exists){
+                const response = await queryMembershipSnapshots(userId);
+                console.log(`Results of userId ${userId}:`, response)
+                return response;
+            }
         } catch (error) {
             console.error("Error fetching room invitations:", error.message);
             throw error;
