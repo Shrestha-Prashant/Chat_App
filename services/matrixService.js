@@ -4,6 +4,7 @@ dotenv.config();
 import axios from "axios";
 import crypto from "crypto"
 import queryMembershipSnapshots from "../models/synapse.js";
+import Chatbot from "../middleware/chatBot.js";
 
 // Initializing a client with the admin user credentials
 const MatrixClient = async (userId,accessToken) =>{
@@ -169,7 +170,6 @@ class MatrixService {
         }
     }
 
-
     //Add user to the room (sending invitation)
     static async addUserToRoom(roomId, userId, accessToken){
         try{
@@ -195,7 +195,6 @@ class MatrixService {
         }
     }
     
-
     //List joined rooms
     static async loadRooms(userId, accessToken) {
         try {
@@ -222,7 +221,6 @@ class MatrixService {
             console.error("Failed to load rooms:", error.message);
         }
     }
-    
 
     //Accepting the invite to a room
     static async acceptInvite(roomId, userId, accessToken){

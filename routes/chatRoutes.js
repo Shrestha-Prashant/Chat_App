@@ -1,6 +1,7 @@
 import express, { response } from "express";
 import authenticateToken from "../middleware/auth.js";
 import MatrixService from "../services/matrixService.js";
+import Chatbot from "../middleware/chatBot.js";
 
 const router = express.Router();
 
@@ -108,6 +109,31 @@ router.get("/:roomId/messages", authenticateToken, async(req,res)=>{
         res.status(500).json({error:"Failed to retrieve messages"});
     }
 });
+
+// Process reminder command
+router.post("/process", async (req, res) => {
+    const { message, userId, userTimeZone } = req.body;
+  
+    if (!message || !userId || !userTimeZone) {
+      return res.status(400).json({ error: "Missing required fields." });
+    }
+  
+    const result = await Chatbot.processCommand(message, userId, userTimeZone);
+    res.json(result);
+  });
+
+// Get all reminders for a user
+router.get("/reminders", async (req, res) => {
+    const { userId } = req.query;
+    console.log(userId)
+  
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required." });
+    }
+  
+    const reminders = await Chatbot.getReminders(userId);
+    res.json(reminders);
+  });
 
 
 export default router;

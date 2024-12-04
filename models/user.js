@@ -59,10 +59,29 @@ class User{
 
         try{
             const token = await db.one(query,[username]);
-            console.log(token)
             return token.accesstoken;
         }catch(error){
             throw new Error("Failed to retrieve access token: " + error.message)
+        }
+    }
+
+    static async storeReminder(userId,title,time){
+        const query = `INSERT INTO reminders (user_id,title,time) VALUES($1,$2,$3);`
+        try{
+            const reminder = await db.one(query,[userId,title,time])
+            return reminder;
+        }catch(error){
+            throw new Error("Failed to store reminder: " + error.message)
+        }
+    }
+
+    static async getReminders(userId){
+        const query = `SELECT * FROM reminders WHERE user_id = $1`;
+        try{
+            const reminders = await db.any(query, [userId])
+            return reminders;
+        }catch(error){
+            throw new Error("Failed to load reminders: " + error.message)
         }
     }
 }
