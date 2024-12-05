@@ -2,9 +2,9 @@ import moment from "moment-timezone";
 import db from "../config/db.js";
 
 class Chatbot {
-  static async processCommand(message, userId, userTimeZone) {
+  static async processCommand(message, userId, userTimeZone,roomId) {
+    console.log("Running chatBot:processCommand")
     try {
-      // Updated regex to allow optional quotes around the title
       const match = message.match(
         /^#remind\s+(?:"([^"]+)"|([^\s]+))\s+(at\s+([\d-:\s]+)|in\s+([\dhms]+))$/i
       );
@@ -33,8 +33,8 @@ class Chatbot {
         if (time.isBefore(moment())) {
           return { error: "Cannot set a reminder for the past." };
         }
-
-        await Chatbot.storeReminder(userId, title, time.toISOString());
+        console.log(time.toISOString())
+        await Chatbot.storeReminder(userId, title, time.toISOString(),roomId);
         return { time: time.toISOString(), title };
       }
 
@@ -58,13 +58,14 @@ class Chatbot {
             "seconds"
           );
 
-        const time = moment().add(duration);
+        const time = moment.utc().add(duration);
 
         if (time.isAfter(moment().endOf("day"))) {
           return { error: "Reminders can only be set for the same day." };
         }
 
-        await Chatbot.storeReminder(userId, title, time.toISOString());
+        await Chatbot.storeReminder(userId, title, time.toISOString(),roomId);
+        // await Chatbot.storeReminder(userId, title, time,roomId);
         return { time: time.toISOString(), title };
       }
 
@@ -75,16 +76,56 @@ class Chatbot {
     }
   }
 
-  static async storeReminder(userId, title, time) {
-    const query = `INSERT INTO reminders (user_id, title, time) VALUES ($1, $2, $3)`;
-    await db.query(query, [userId, title, time]);
+  //stores reminder
+  static async storeReminder(userId, title, time,roomId) {
+    console.log("Running chatBot:storeReminder")
+    const query = `INSERT INTO reminders (user_id, title, time,roomid) VALUES ($1, $2, $3, $4)`;
+    await db.query(query, [userId, title, time,roomId]);
   }
 
+  //pull user's reminder
   static async getReminders(userId){
+    console.log("Running chatBot:getReminder")
     const query = `SELECT * FROM reminders WHERE user_id = $1 ORDER BY time ASC`;
-    const {rows} = await db.manyOrNone(query, [userId]);
-    console.log(rows)
-    return rows;
+    const response = await db.manyOrNone(query, [userId]);
+    return response;
+  }
+
+  //get reminder which needs to be displayed now
+  static async getEarliestReminder(){
+    console.log("Running chatBot:getCurrentReminder")
+    const query = `SELECT * FROM reminders WHERE time = (
+      SELECT MIN(time) FROM reminders
+    ) `;
+    try{
+      const reminder = await db.oneOrNone(query)
+      console.log(reminder)
+      return reminder;
+    }catch(error){
+      console.error("Error getting current reminder:", error)
+    }
+  }
+
+  static async getParticularReminder(time){
+    console.log("Running chatBot:getParticularReminder")
+    const query = `SELECT * FROM reminders WHERE time = $1`;
+    try{
+      const reminder = db.one(query,[time])
+      return reminder
+    }catch(error){
+      console.error("Can not retrieve particular reminder",error.message)
+    }
+  }
+
+  static async deleteReminder(id){
+    console.log("Running chatBot:deleteReminder")
+    const query = `DELETE FROM reminders WHERE id = $1`
+  try{
+    const response = db.oneOrNone(query,[id])
+    return response
+  }catch(error){
+    error.message('Can not delete reminder',error.message)
+  }
   }
 }
 

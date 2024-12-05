@@ -5,6 +5,12 @@ import axios from "axios";
 import crypto from "crypto"
 import queryMembershipSnapshots from "../models/synapse.js";
 import Chatbot from "../middleware/chatBot.js";
+import moment from "moment-timezone";
+import cron from 'node-cron'
+import User from "../models/user.js";
+
+// to store cron job
+let currentTask = null;
 
 // Initializing a client with the admin user credentials
 const MatrixClient = async (userId,accessToken) =>{
@@ -259,6 +265,116 @@ class MatrixService {
             throw error;
         }
     }
+    
+    // static async sendReminder(time){
+    //     console.log("Running matrixServices:sendReminder")
+    //     const matrixClient = await MatrixClient(process.env.synapse_admin_user_id,process.env.synapse_admin_access_token)
+    //     try{
+    //         const notice = Chatbot.getParticularReminder(time)
+    //         await matrixClient.sendEvent(notice.roomId, "m.room.message", {
+    //             msgtype: "m.notice",
+    //             body: notice
+    //         });
+    //         await Chatbot.deleteReminder(notice.id)
+    //         await this.scheduleCronJob(true)
+    //     }catch(error){
+    //         console.error(error.message)
+    //     }
+    // }
+
+
+    // static async scheduleCronJob(update=false){
+    //     console.log("Running matrixServices:scheduleCronJob")
+    //     //find the reminder with earliest time
+    //     const time = await Chatbot.getEarliestReminder()
+
+    //     const date = moment.utc(time);
+    //     console.log(date)
+    //     console.log(date.format("YYYY-MM-DD HH:mm:ss")); // Output in Asia/Kathmandu local time
+    //     console.log(date.minute())
+    //     console.log(date.hour())
+    //     console.log(date.date())
+    //     console.log(date.month()+1)
+
+    //     // const tasks = cron.getTasks()
+    //     // console.log(tasks)
+
+    //     //once the cron job runs sucessfully, update the cron job timing
+    //     if(!update){
+    //         console.log("inside cron initial schedule")
+    //         let task = cron.schedule(`${date.minute()} ${date.hour()} ${date.date()} ${date.month()+1} * *`, async (time) => {
+    //             console.log("Running matrixServices:sendReminder")
+    //     const matrixClient = await MatrixClient(process.env.synapse_admin_user_id,process.env.synapse_admin_access_token)
+    //     try{
+    //         const notice = Chatbot.getParticularReminder(time)
+    //         await matrixClient.sendEvent(notice.roomId, "m.room.message", {
+    //             msgtype: "m.notice",
+    //             body: notice
+    //         });
+    //         await Chatbot.deleteReminder(notice.id)
+    //         await this.scheduleCronJob(true)
+    //     }catch(error){
+    //         console.error(error.message)
+    //     }
+    //         },{timezone:"Etc/UTC"})
+    //         console.log(`${date.minute()} ${date.hour()} ${date.date()} ${date.month()} * *`)
+    //         console.log(task)
+    //         return task
+    //     }
+    //     else{
+    //         console.log("inside cron update")
+    //         task.stop();    //stopping the existing task
+    //         cron.schedule(`${date.minute()} ${date.hour()} ${date.date()} ${date.month()+1} * *`, async () => {
+    //             await this.sendReminder(time)
+    //         },{timezone:"Etc,UTC"})
+    //     }
+        
+    // }
+
+    static async sendReminder(notice) {
+        console.log("Running matrixServices:sendReminder");
+        const user = await User.matrixInformation(notice.user_id)
+        const matrixClient = await MatrixClient(user.userId, user.accessToken);
+        try {
+            // const notice = await Chatbot.getParticularReminder(time); 
+            await matrixClient.sendEvent(notice.roomId, "m.room.message", {
+                msgtype: "m.notice",
+                body: notice.title, 
+            });
+            await Chatbot.deleteReminder(notice.id); 
+            await this.scheduleCronJob(true); 
+        } catch (error) {
+            console.error("Error in sendReminder:", error.message);
+        }
+    }
+
+    static async scheduleCronJob(update = false) {
+    console.log("Running matrixServices:scheduleCronJob");
+
+    const earliest_reminder = await Chatbot.getEarliestReminder();
+    const time = moment.utc(earliest_reminder.time); // Ensuring time is in UTC
+    console.log(time)
+    console.log("Scheduling reminder at (UTC):", time.format("YYYY-MM-DD HH:mm:ss"));
+    console.log(`Cron pattern: ${time.minute()} ${time.hour()} ${time.date()} ${time.month() + 1} *`);
+
+    // Stopping the existing task if this is an update
+    if (update && currentTask) {
+        console.log("Stopping existing cron task");
+        currentTask.stop();
+    }
+
+    // Scheduling the new task
+    currentTask = cron.schedule(
+        `${time.minute()} ${time.hour()} ${time.date()} ${time.month() + 1} *`,
+        async () => {
+            console.log("Cron job triggered!");
+            await this.sendReminder(earliest_reminder);
+        },
+        { timezone: "Etc/UTC" } 
+    );
+    console.log("Task scheduled successfully");
+    return currentTask;
+}
 
 }
 

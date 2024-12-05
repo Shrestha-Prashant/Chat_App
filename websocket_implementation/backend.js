@@ -17,6 +17,7 @@ const startMatrixSyncWithWebSocket = async (userId, accessToken, port = 8080) =>
 
   client.startClient();
 
+  //check for types, files, messages, reminders
   wss.on("connection", (ws) => {
     console.log("Frontend connected to WebSocket");
 
