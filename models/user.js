@@ -29,13 +29,12 @@ class User{
     }
 
     static async matrixInformation(matrixId){
-        const query = `SELECT * FROM matrixInfo WHERE userid = $1`
+        const query = `SELECT * FROM matrixInfo WHERE userid ilike $1`
         try{
-            const matrixInfo = await db.one(query,[matrixId])
-            console.log(matrixInfo)
+            const matrixInfo = await db.one(query,matrixId)
             return matrixInfo;
         }catch(error){
-            console.error("Could not find matrix user: " + error.message)
+            console.error("Could not find matrix user: " + error)
         }
     }
 
