@@ -74,6 +74,15 @@ class User{
             throw new Error("Failed to retrieve access token: " + error.message)
         }
     }
+
+    static async storeContentInfo(userId,roomId,contentUri,fileType){
+        try{
+            const query = `INSERT INTO roomfiles(roomid,senderid,contenturi,filetype) VALUES($1,$2,$3,$4)`;
+            await db.oneOrNone(query,[roomId,userId,contentUri,fileType])
+        }catch(error){
+            console.error("Error in saving content information: " + error.message)
+        }
+    }
 }
 
 export default User;

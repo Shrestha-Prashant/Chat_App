@@ -8,9 +8,22 @@ import Chatbot from "../middleware/chatBot.js";
 import moment from "moment-timezone";
 import cron from 'node-cron'
 import User from "../models/user.js";
+import multer from "multer";
+import zlib from "zlib";
+import {promisify} from "util"
+import fs from "fs/promises" 
+import { response } from "express";
+
 
 // to store cron job
 let currentTask = null;
+
+// maximum file size
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+//Compression of file 
+const compress = promisify(zlib.gzip)
+const decompress = promisify(zlib.gunzip)
 
 // Initializing a client with the admin user credentials
 const MatrixClient = async (userId,accessToken) =>{
@@ -20,6 +33,18 @@ const MatrixClient = async (userId,accessToken) =>{
         userId: userId,     
     })
 } 
+
+const upload = multer({
+    dest: "uploads/",
+    limits : {fileSize:MAX_FILE_SIZE},
+    fileFilter : (req,file, cb) => {
+        if(file.mimetype.startsWith("image/") || file.mimetype.startsWith("application/")){
+            cb(null,true)
+        }else{
+            cb(new Error("Unsupported file type."))
+        }
+    },
+})
 
 function generateMac(nonce, user, password, admin=false, userType=null, sharedSecret){
     const hmac = crypto.createHmac('sha1', sharedSecret);
@@ -254,6 +279,64 @@ class MatrixService {
         }
     }
 
+    static async sendFile(senderId,accessToken,roomId,base64Data){
+        const matrixClient = await MatrixClient(senderId,accessToken)
+        try{
+            const base64Header = base64Data.split(",")[0]
+            const base64Content = base64Data.split(",")[1]
+
+            if(!base64Content||!base64Data){
+                return res.status(400).json({error: " Invalid base64 data format."})
+            }
+
+            const matches = base64Header.match(/^data:(.*?);base64$/)
+            console.log("matches: " +  matches)
+            if(!matches||matches.length < 2){
+                return res.status(400).json({error:"Unable to extract file metadata"})
+            }
+
+            const fileType = matches[1];
+            console.log(fileType)
+            const fileExtension = fileType.split("/")[1] || "bin"
+            console.log(fileExtension)
+            //decoding base64 to binary
+            const binaryData = Buffer.from(base64Content,"base64")
+
+            //compressing data
+            const compressedData = await compress(binaryData)
+            console.log(binaryData)
+            
+            //uploading file to matrix
+            const uploadResponse = await matrixClient.uploadContent(compressedData,{
+                type: "application/gzip",
+                rawResponse: false,
+            })
+            console.log(uploadResponse)
+            const contentUri = uploadResponse.content_uri
+            console.log(contentUri)
+
+            //sending File in the message
+            const fileMessage = {
+                msgtype: "m.file",
+                url: contentUri,
+                body: fileType,
+                info: {
+                    mimetype: fileType
+                }
+            }
+
+            const messageSent = await matrixClient.sendEvent(roomId, "m.room.message",fileMessage)
+            if(messageSent){
+                User.storeContentInfo(senderId,roomId,contentUri,fileType)
+            }
+        
+            return true
+        }catch(error){
+            console.error("Error in sendFile: " + error)
+            return false
+        }
+    }
+
     //Get message from a room
     static async getMessage(roomId,userId,accessToken){
         try{
@@ -266,6 +349,7 @@ class MatrixService {
         }
     }
 
+    // send reminder
     static async sendReminder(notice) {
         const user = await User.matrixInformation(notice.user_id)
         const matrixClient = await MatrixClient(user.userId, user.accesstoken);
@@ -281,6 +365,7 @@ class MatrixService {
         }
     }
 
+    // reminder
     static async scheduleCronJob(update = false) {
     const earliest_reminder = await Chatbot.getEarliestReminder();
     if(!earliest_reminder){
@@ -305,6 +390,27 @@ class MatrixService {
         { timezone: "Etc/UTC" } 
     );
     return currentTask;
+   }
+
+   static async getContents(senderId,accessToken,contentUri){
+    const matrixClient = await MatrixClient(senderId, accessToken);
+    try{
+        // const contents = matrixClient.getContent(contentUri)
+        const [_, serverName, mediaId] = contentUri.match(/^mxc:\/\/([^/]+)\/(.+)$/);
+        // Construct the download URL
+        const downloadUrl = `http://localhost:8008/_matrix/media/v3/download/${serverName}/${mediaId}`;
+
+        // Fetch the file
+        const content = await axios.get(downloadUrl, { responseType: "arraybuffer" });
+        const compressedData = Buffer.from(content.data)
+        const decompress_data = await decompress(compressedData)
+        const actual_data = decompress_data.toString('base64')
+        console.log(actual_data)
+        // const buffer = Buffer.from(response.data)
+        return actual_data
+    }catch(error){
+        console.error("Error in getContents:", error.message);
+    }
    }
 
 }

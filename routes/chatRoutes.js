@@ -134,5 +134,71 @@ router.get("/reminders", async (req, res) => {
     res.json(reminders); // time in utc, needs to be converted to local time from frontend
   });
 
+// files upload to matrix
+router.post("/uploadFile",async (req,res)=>{
+    const {roomId,accessToken, senderId, file, fileType} = req.body;
+    try{
+        const content_url = await MatrixService.uploadFile(senderId,accessToken,file,fileType)
+        return res.status(200).json({
+            content_url,
+            fileName: file.fileName,
+            fileType: filetype,
+            fileSize: file.fileSize
+        })
+    }catch(error){
+        console.error("Can not upload file: " + error.message)
+    }
+})
+
+// send file
+// may be we need to store in database metadata
+// router.post("/sendFile", async(req,res)=>{
+//     const {senderId,roomId,accessToken,contentUri,fileName, fileType, fileSize} = req.body;
+
+//     if(!contentUri || !roomId || !fileName || !fileType || !fileSize){
+//         return res.status(400).json({error: "Missing required fields."})
+//     }
+//     try{
+//         const response = await MatrixService.sendFile(roomId,senderId,accessToken,fileName,fileType,fileSize)
+//         if(response)
+//             return res.status(200).json({message: "File sent successfully"})
+//     }catch(error){
+//         console.error("Can not upload file: " + error.message)
+//     }
+// })
+router.post("/sendFile", async(req,res)=>{
+    const {userId,roomId,accessToken,base64Data} = req.body;
+
+    if(!userId || !roomId || !accessToken || !base64Data){
+        return res.status(400).json({error: "Missing required fields."})
+    }
+    try{
+        const response = await MatrixService.sendFile(userId,accessToken,roomId,base64Data)
+        if(response)
+            return res.status(200).json({message: "File sent successfully"})
+    }catch(error){
+        console.error("Can not upload file: " + error.message)
+    }
+})
+
+
+router.post("/getFile",async (req,res)=>{
+    const {userId,accessToken,contentUri} = req.body;
+    try{
+        const contents = MatrixService.getContents(userId,accessToken,contentUri)
+        return res.status(200).json(contents)
+    }catch(error){
+        console.error("Can not get files: " + error.message)
+    }
+})
+
+// delete file
+router.post("/deleteFile", async(req,res)=>{
+    try{
+
+    }catch(error){
+        console.error("Can not upload file: " + error.message)
+    }
+})
 
 export default router;
