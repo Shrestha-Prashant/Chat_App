@@ -11,7 +11,7 @@ const port = process.env.PORT || 5000;
 
 global.fetch = fetch;
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit:'10MB'}));
 
 app.use('/api/users',userRoutes)
 app.use('/api/chats',chatRoutes)

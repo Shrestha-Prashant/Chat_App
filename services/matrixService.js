@@ -12,7 +12,6 @@ import multer from "multer";
 import zlib from "zlib";
 import {promisify} from "util"
 import fs from "fs/promises" 
-import { response } from "express";
 
 
 // to store cron job
@@ -279,26 +278,15 @@ class MatrixService {
         }
     }
 
-    static async sendFile(senderId,accessToken,roomId,base64Data){
+    static async sendFile(senderId,accessToken,roomId,base64Data,fileType,fileName){
         const matrixClient = await MatrixClient(senderId,accessToken)
         try{
-            const base64Header = base64Data.split(",")[0]
             const base64Content = base64Data.split(",")[1]
 
             if(!base64Content||!base64Data){
                 return res.status(400).json({error: " Invalid base64 data format."})
             }
 
-            const matches = base64Header.match(/^data:(.*?);base64$/)
-            console.log("matches: " +  matches)
-            if(!matches||matches.length < 2){
-                return res.status(400).json({error:"Unable to extract file metadata"})
-            }
-
-            const fileType = matches[1];
-            console.log(fileType)
-            const fileExtension = fileType.split("/")[1] || "bin"
-            console.log(fileExtension)
             //decoding base64 to binary
             const binaryData = Buffer.from(base64Content,"base64")
 
@@ -392,22 +380,19 @@ class MatrixService {
     return currentTask;
    }
 
-   static async getContents(senderId,accessToken,contentUri){
-    const matrixClient = await MatrixClient(senderId, accessToken);
+   static async getContents(contentUri){
     try{
-        // const contents = matrixClient.getContent(contentUri)
-        const [_, serverName, mediaId] = contentUri.match(/^mxc:\/\/([^/]+)\/(.+)$/);
-        // Construct the download URL
-        const downloadUrl = `http://localhost:8008/_matrix/media/v3/download/${serverName}/${mediaId}`;
+            // const contents = matrixClient.getContent(contentUri)
+            const [_, serverName, mediaId] = contentUri.match(/^mxc:\/\/([^/]+)\/(.+)$/);
+            // Construct the download URL
+            const downloadUrl = `http://localhost:8008/_matrix/media/v3/download/${serverName}/${mediaId}`;
 
-        // Fetch the file
-        const content = await axios.get(downloadUrl, { responseType: "arraybuffer" });
-        const compressedData = Buffer.from(content.data)
-        const decompress_data = await decompress(compressedData)
-        const actual_data = decompress_data.toString('base64')
-        console.log(actual_data)
-        // const buffer = Buffer.from(response.data)
-        return actual_data
+            // Fetch the file
+            const content = await axios.get(downloadUrl, { responseType: "arraybuffer" });
+            const compressedData = Buffer.from(content.data)
+            const decompress_data = await decompress(compressedData)
+            const actual_data = decompress_data.toString('base64')
+            return actual_data 
     }catch(error){
         console.error("Error in getContents:", error.message);
     }

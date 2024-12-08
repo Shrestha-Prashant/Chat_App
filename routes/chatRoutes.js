@@ -167,13 +167,13 @@ router.post("/uploadFile",async (req,res)=>{
 //     }
 // })
 router.post("/sendFile", async(req,res)=>{
-    const {userId,roomId,accessToken,base64Data} = req.body;
+    const {userId,roomId,accessToken,base64Data,fileType,fileName} = req.body;
 
     if(!userId || !roomId || !accessToken || !base64Data){
         return res.status(400).json({error: "Missing required fields."})
     }
     try{
-        const response = await MatrixService.sendFile(userId,accessToken,roomId,base64Data)
+        const response = await MatrixService.sendFile(userId,accessToken,roomId,base64Data,fileType,fileName)
         if(response)
             return res.status(200).json({message: "File sent successfully"})
     }catch(error){
@@ -183,9 +183,10 @@ router.post("/sendFile", async(req,res)=>{
 
 
 router.post("/getFile",async (req,res)=>{
-    const {userId,accessToken,contentUri} = req.body;
+    const {contentUri} = req.body;
     try{
-        const contents = MatrixService.getContents(userId,accessToken,contentUri)
+        const contents = await MatrixService.getContents(contentUri)
+        console.log(contents)
         return res.status(200).json(contents)
     }catch(error){
         console.error("Can not get files: " + error.message)
