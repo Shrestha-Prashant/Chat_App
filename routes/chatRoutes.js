@@ -92,8 +92,9 @@ router.post("/:roomId/sendMessage",authenticateToken, async(req,res)=>{
 });
 
 //Getting message from a room
-router.get("/:roomId/messages", authenticateToken, async(req,res)=>{
-    const {roomId} = req.params;
+router.get("/:roomId/messages", async(req,res)=>{
+// router.get("/:roomId/messages", authenticateToken, async(req,res)=>{
+const {roomId} = req.params;
     const {userId, accessToken} = req.query;
 
     try{
@@ -150,22 +151,6 @@ router.post("/uploadFile",async (req,res)=>{
     }
 })
 
-// send file
-// may be we need to store in database metadata
-// router.post("/sendFile", async(req,res)=>{
-//     const {senderId,roomId,accessToken,contentUri,fileName, fileType, fileSize} = req.body;
-
-//     if(!contentUri || !roomId || !fileName || !fileType || !fileSize){
-//         return res.status(400).json({error: "Missing required fields."})
-//     }
-//     try{
-//         const response = await MatrixService.sendFile(roomId,senderId,accessToken,fileName,fileType,fileSize)
-//         if(response)
-//             return res.status(200).json({message: "File sent successfully"})
-//     }catch(error){
-//         console.error("Can not upload file: " + error.message)
-//     }
-// })
 router.post("/sendFile", async(req,res)=>{
     const {userId,roomId,accessToken,base64Data,fileType,fileName} = req.body;
 
@@ -175,18 +160,16 @@ router.post("/sendFile", async(req,res)=>{
     try{
         const response = await MatrixService.sendFile(userId,accessToken,roomId,base64Data,fileType,fileName)
         if(response)
-            return res.status(200).json({message: "File sent successfully"})
+            return res.status(200).json(response)
     }catch(error){
         console.error("Can not upload file: " + error.message)
     }
 })
 
-
 router.post("/getFile",async (req,res)=>{
     const {contentUri} = req.body;
     try{
         const contents = await MatrixService.getContents(contentUri)
-        console.log(contents)
         return res.status(200).json(contents)
     }catch(error){
         console.error("Can not get files: " + error.message)
@@ -202,4 +185,17 @@ router.post("/deleteFile", async(req,res)=>{
     }
 })
 
+// update msg status to seen
+//listen to m.seen msg and extract getContent
+router.post("/status",async (req,res)=>{
+    const {userId,msgId,accessToken,roomId} = req.body;
+    try{
+        const response = await MatrixService.updateStatus(userId,msgId,accessToken,roomId)
+        return res.status(200).json(response)
+    }catch(err){
+        return res.status(400).json(err)
+    }
+})
+
 export default router;
+

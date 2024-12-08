@@ -127,6 +127,7 @@ class Chatbot {
     error.message('Can not delete reminder',error.message)
   }
   }
+
 }
 
 export default Chatbot;

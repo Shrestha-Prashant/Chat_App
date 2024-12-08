@@ -8,10 +8,8 @@ import Chatbot from "../middleware/chatBot.js";
 import moment from "moment-timezone";
 import cron from 'node-cron'
 import User from "../models/user.js";
-import multer from "multer";
 import zlib from "zlib";
-import {promisify} from "util"
-import fs from "fs/promises" 
+import {promisify} from "util" 
 
 
 // to store cron job
@@ -32,18 +30,6 @@ const MatrixClient = async (userId,accessToken) =>{
         userId: userId,     
     })
 } 
-
-const upload = multer({
-    dest: "uploads/",
-    limits : {fileSize:MAX_FILE_SIZE},
-    fileFilter : (req,file, cb) => {
-        if(file.mimetype.startsWith("image/") || file.mimetype.startsWith("application/")){
-            cb(null,true)
-        }else{
-            cb(new Error("Unsupported file type."))
-        }
-    },
-})
 
 function generateMac(nonce, user, password, admin=false, userType=null, sharedSecret){
     const hmac = crypto.createHmac('sha1', sharedSecret);
@@ -307,7 +293,7 @@ class MatrixService {
             const fileMessage = {
                 msgtype: "m.file",
                 url: contentUri,
-                body: fileType,
+                body: fileName,
                 info: {
                     mimetype: fileType
                 }
@@ -315,10 +301,9 @@ class MatrixService {
 
             const messageSent = await matrixClient.sendEvent(roomId, "m.room.message",fileMessage)
             if(messageSent){
-                User.storeContentInfo(senderId,roomId,contentUri,fileType)
+                await User.storeContentInfo(senderId,roomId,contentUri,fileType)
+                return fileMessage
             }
-        
-            return true
         }catch(error){
             console.error("Error in sendFile: " + error)
             return false
@@ -330,6 +315,7 @@ class MatrixService {
         try{
             const matrixClient = await MatrixClient(userId,accessToken);
             const response = await matrixClient.roomInitialSync(roomId);
+            console.log(response)
             return response.messages;
         }catch(error){
             console.error("Failed to retrieve messages:", error.message);
@@ -398,6 +384,22 @@ class MatrixService {
     }
    }
 
+   //update the status of the message
+   static async updateStatus(userId,msgId,accessToken,roomId){
+    const matrixClient = await MatrixClient(userId,accessToken)
+    try{
+        const content = {
+            eventType: "m.seen",
+            seenBy: userId,
+            timestamp: new Date().toISOString(),
+            eventId: msgId
+        }
+        const response = await matrixClient.sendEvent(roomId,"m.seen", content)
+        console.log(response)
+    }catch(error){
+        console.error("Could not add event: " + error)
+    }
+  }
 }
 
 export default MatrixService;
