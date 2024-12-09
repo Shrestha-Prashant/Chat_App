@@ -3,10 +3,10 @@ import dotenv from "dotenv";
 dotenv.config();
 import axios from "axios";
 import crypto from "crypto"
-import queryMembershipSnapshots from "../models/synapse.js";
 import Chatbot from "../middleware/chatBot.js";
 import moment from "moment-timezone";
 import cron from 'node-cron'
+import queryMembershipSnapshots from "../models/synapse.js";
 import User from "../models/user.js";
 import zlib from "zlib";
 import {promisify} from "util" 
@@ -87,6 +87,22 @@ class MatrixService {
         }catch(error){
             console.error("Failed to register user:", error.response?.data || error.message);
             throw error;
+        }
+    }
+
+    //Getting token for the user
+    static async getLoginCredentials(username,password){
+        try{
+            let userId = "@" + username + ":localhost"
+            const response = await axios.post('http://localhost:8008/_matrix/client/v3/login',{
+                type: "m.login.password",
+                user: userId,
+                password: password
+            })
+            console.log(response)
+            return response.data
+        }catch(err){
+            console.error("Error in getting user token: " + err)
         }
     }
 
@@ -221,15 +237,21 @@ class MatrixService {
             await new Promise((resolve) => matrixClient.once("sync", resolve));
     
             const joinedRooms = matrixClient.getRooms();
-    
+
             const roomDetails = {};
             for (const room of joinedRooms) {
+                const members_id = room.currentState.userIdsToDisplayNames
                 const roomId = room.roomId;
-                const roomName = room.name || room.getCanonicalAlias() || "Unnamed Room";
+                const usernames = Object.entries(members_id).map(([userId,displayName]) => {
+                    if(!displayName){
+                        return userId.replace(/^@/,'').split(":")[0]
+                    }
+                    return displayName
+                })
     
-                roomDetails[roomId] = roomName;
+                roomDetails[roomId] = usernames;
             }
-    
+
             // Stop the client to clean up resources
             matrixClient.stopClient();
             return roomDetails;

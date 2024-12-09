@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import authenticateToken from "../middleware/auth.js";
 import axios from 'axios';
+import MatrixService from "../services/matrixService.js";
 
 const router = express.Router();
 
@@ -33,28 +34,36 @@ router.post("/register", async(req,res)=>{
 });
 
 //Login a user into the system
-router.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-    try {
-      const user = await User.findByUsername(username);
-      if (!user) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
+router.post("/login", authenticateToken,async (req, res) => {
+  const {username,password} = req.body;
+  console.log(username,password)
+  try{
+    const token = await  MatrixService.getLoginCredentials(username,password)
+    res.status(200).json(token)
+  }catch(error){
+    res.status(error.status).json(error)
+    console.error("Check for error")
+  }
+    // try {
+    //   const user = await User.findByUsername(username);
+    //   if (!user) {
+    //     return res.status(401).json({ error: "Invalid credentials" });
+    //   }
   
-      const passwordMatch = await bcrypt.compare(password, user.password);
-      if (!passwordMatch) {
-        console.log("Password does not match");
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
+    //   const passwordMatch = await bcrypt.compare(password, user.password);
+    //   if (!passwordMatch) {
+    //     console.log("Password does not match");
+    //     return res.status(401).json({ error: "Invalid credentials" });
+    //   }
   
-      const token = jwt.sign({ userId: user.user_id }, process.env.JWT_SECRET, {
-        expiresIn: "1h",
-      });
-      res.json({ message: "Login successful", token });
-    } catch (error) {
-      console.error("Login error:", error.message);
-      res.status(500).json({ error: "Login failed" });
-    }
+    //   const token = jwt.sign({ userId: user.user_id }, process.env.JWT_SECRET, {
+    //     expiresIn: "1h",
+    //   });
+    //   res.json({ message: "Login successful", token });
+    // } catch (error) {
+    //   console.error("Login error:", error.message);
+    //   res.status(500).json({ error: "Login failed" });
+    // }
   });
 
 //Profile details of the user
