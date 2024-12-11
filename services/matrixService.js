@@ -86,6 +86,7 @@ class MatrixService {
             );
              
             const nonce = nonceResponse.data.nonce;
+            console.log(nonce)
             const response = await axios.post(
                 url,
                 {

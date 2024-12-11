@@ -5,6 +5,7 @@ import bodyParser from "body-parser";
 import userRoutes from "./routes/userRoutes.js"
 import chatRoutes from "./routes/chatRoutes.js"
 import fetch from "node-fetch"
+import cors from "cors"
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -15,6 +16,8 @@ app.use(bodyParser.json({limit:'10MB'}));
 
 app.use('/api/users',userRoutes)
 app.use('/api/chats',chatRoutes)
+app.use(cors())
+
 
 app.get("/", (req,res)=>{
     res.send("Chat application is running");

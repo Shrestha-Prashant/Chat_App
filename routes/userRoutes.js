@@ -7,9 +7,13 @@ import axios from 'axios';
 import MatrixService from "../services/matrixService.js";
 
 const router = express.Router();
+const corsOptions = {
+  origin: 'http://localhost:8080',
+  optionsSucessStatus: 200,
+}
 
 //Login a user into the system
-router.post("/login", async(req, res) => {
+router.post("/login", cors(corsOptions),async(req, res) => {
   const {username,password} = req.body;
   console.log(username,password)
   try{
