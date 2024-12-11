@@ -51,6 +51,25 @@ function generateMac(nonce, user, password, admin=false, userType=null, sharedSe
 }
 
 class MatrixService {
+    // to check if user exists already
+    static async userExists(username){
+        try{
+            console.log("userExists")
+            const userId = "@" + username + ":localhost"
+            const url = `http://localhost:8008/_synapse/admin/v2/users/${userId}`
+            const user = await axios.get(url,{
+                headers: {
+                    Authorization: `Bearer ${process.env.synapse_admin_access_token}`
+                }
+            })
+            return true
+        }catch(error){
+            if(error.response.status===404){
+                return false
+            }
+        }
+    }
+
     //Registering a new Matrix users
     static async registerUser(username,password){
         try{
@@ -65,7 +84,7 @@ class MatrixService {
                     }
                 }
             );
-            
+             
             const nonce = nonceResponse.data.nonce;
             const response = await axios.post(
                 url,
@@ -99,7 +118,8 @@ class MatrixService {
                 user: userId,
                 password: password
             })
-            console.log(response)
+            // console.log(response)
+            console.log("response data : " + response.data)
             return response.data
         }catch(err){
             console.error("Error in getting user token: " + err)
