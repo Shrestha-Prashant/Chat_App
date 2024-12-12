@@ -2,6 +2,7 @@ import express, { response } from "express";
 import authenticateToken from "../middleware/auth.js";
 import MatrixService from "../services/matrixService.js";
 import Chatbot from "../middleware/chatBot.js";
+import axios from "axios";
 
 const router = express.Router();
 
@@ -19,12 +20,35 @@ router.post("/register", async(req,res)=> {
 //Creating a chat room
 router.post("/createRoom", async(req,res)=>{
     //send isGroupChat from frontend as true or false
-    // userId -> matrix user id, accessToken -> matrix access token, inviteUserId -> request receiver userI
     const {userId, accessToken, inviteUserId, isGroupChat,roomName=null} = req.body
     try{
-        const room = await MatrixService.createRoom(userId,accessToken,inviteUserId,isGroupChat, roomName);
-        res.status(201).json({message:"Room created", room});
+        const username = userId.split(':')[0].substring(1)
+        const url = `http://localhost:3000/api/chats/loadrooms`
+        const roomsInvovlingUsers = await axios.get(url,{
+            params: {
+                userId: userId,
+                accessToken: accessToken
+            }
+        })
+        const usersPresentRoomId = Object.entries(roomsInvovlingUsers.data).find(([key,users]) => {
+            return users.includes(username) && users.includes(inviteUserId)
+        })?.[0]
+        if(usersPresentRoomId){
+            const _url = `http://localhost:3000/api/chats/${encodeURIComponent(usersPresentRoomId)}/messages`
+            const chatHistory = await axios.get(_url,{
+                params: {
+                    userId: userId,
+                    accessToken: accessToken
+                }
+            })
+            res.status(200).json(chatHistory.data)
+        }
+        else{
+            const room = await MatrixService.createRoom(userId,accessToken,inviteUserId,isGroupChat, roomName);
+            res.status(201).json({message:"Room created", room});
+        }
     }catch(error){
+        console.log(error)
         res.status(500).json({error:"Failed to create room"});
     }
 });
@@ -56,8 +80,10 @@ router.get("/listInvitations",authenticateToken, async(req,res)=>{
 
 //Load the rooms joined by user
 router.get("/loadrooms",async (req,res) => {
+    console.log("loadrooms")
     const {userId,accessToken} = req.query;
     try{
+        console.log("loadrooms")
         const rooms = await MatrixService.loadRooms(userId,accessToken)
         res.status(200).json(rooms)
     }catch(error){
@@ -93,8 +119,10 @@ router.post("/:roomId/sendMessage", async(req,res)=>{
 //Getting message from a room
 router.get("/:roomId/messages", async(req,res)=>{
 // router.get("/:roomId/messages", authenticateToken, async(req,res)=>{
+    console.log("get message")
 const {roomId} = req.params;
     const {userId, accessToken} = req.query;
+    console.log(roomId,userId,accessToken)
 
     try{
         const response = await MatrixService.getMessage(roomId,userId,accessToken);   

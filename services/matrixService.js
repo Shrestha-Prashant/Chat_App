@@ -23,13 +23,34 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const compress = promisify(zlib.gzip)
 const decompress = promisify(zlib.gunzip)
 
+const validateCredentials = async (userId, accessToken) => {
+    const url = 'http://localhost:8008/_matrix/client/v3/account/whoami';
+    try {
+        const response = await axios.get(url, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+        return response.data.user_id === userId;
+    } catch (error) {
+        return false; // Invalid credentials
+    }
+};
+
+
 // Initializing a client with the admin user credentials
 const MatrixClient = async (userId,accessToken) =>{
-    return sdk.createClient({
-        baseUrl: 'http://localhost:8008',
-        accessToken: accessToken,
-        userId: userId,     
-    })
+    const isValid = await validateCredentials(userId,accessToken)
+    if(!isValid){
+        throw new Error('Invalid credentials')
+    }
+    else{
+        return sdk.createClient({
+            baseUrl: 'http://localhost:8008',
+            accessToken: accessToken,
+            userId: userId,     
+        })
+    }
 } 
 
 function generateMac(nonce, user, password, admin=false, userType=null, sharedSecret){
@@ -129,7 +150,6 @@ class MatrixService {
     static async createRoom(userId, accessToken, inviteUserId, isGroupChat = false, roomName = null) {
         try {
             const matrixClient = await MatrixClient(userId, accessToken);
-
             const options = {
                 name: roomName,
                 preset: "trusted_private_chat",
@@ -195,7 +215,6 @@ class MatrixService {
             }
 
             const room = await matrixClient.createRoom(options);
-            console.log(room.room_id)
             const username = "@"+inviteUserId+":localhost"
             const invitedUserIds = Array.isArray(inviteUserId) ? inviteUserId : [username];
 
@@ -213,7 +232,6 @@ class MatrixService {
             const autoAcceptInvitation = async(id) => {
                 try{
                     const userAcessToken = await synapseDB.getAccessToken(id)
-                    console.log(userAcessToken)
                     await axios.post(`http://localhost:8008/_matrix/client/v3/rooms/${room.room_id}/join`,
                         {},{
                             headers: {
@@ -253,7 +271,7 @@ class MatrixService {
         try {
             const user_exists = await MatrixClient(userId,accessToken);
             if(user_exists){
-                const response = await queryMembershipSnapshots(userId);
+                const response = await synapseDB.queryMembershipSnapshots(userId);
                 return response;
             }
         } catch (error) {

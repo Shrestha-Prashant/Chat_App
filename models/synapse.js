@@ -32,7 +32,7 @@ class synapseDB{
                         console.log('Database connection closed.');
                     }
                 });
-                resolve(rows); // Resolve the promise with the query results
+                resolve(rows); // Resolving the promise with the query results
             });
         });
     }
@@ -54,12 +54,33 @@ class synapseDB{
                         console.log('Database connection closed.');
                     }
                 });
-                console.log("rows: ", rows)
-                console.log("token",rows[1])
-                console.log(rows[1].token)
-                resolve(rows[1].token); // Resolve the promise with the query results
+                resolve(rows[0].token); 
             });
         }); 
+    }
+
+    static async checkChatRoom(user1,user2){
+        const db = await dbConnect();
+        const query = `SELECT * FROM room_memberships WHERE (user_id = ? OR user_id = ?) and (sender = ? OR sender = ?)`
+
+        return new Promise((resolve,reject)=> {
+            db.get(query, [[user1],[user2],[user1],[user2]],(err,row)=>{
+                if(err){
+                    console.error("Failed to execute query:",err.message)
+                    db.close(()=> console.log('Database connection closed due to error.'))
+                    return reject(err)
+                }
+                db.close((closeErr)=> {
+                    if(closeErr){
+                        console.error("Error closing database.",closeErr.message)
+                    } else {
+                        console.log('Database connection closed.')
+                    }
+                })
+                console.log("row",row)
+                resolve(row)
+            })
+        })
     }
 }
 
