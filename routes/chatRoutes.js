@@ -79,7 +79,7 @@ router.post("/acceptInvite", authenticateToken, async(req,res)=>{
 })
 
 //Sending a message in a room
-router.post("/:roomId/sendMessage",authenticateToken, async(req,res)=>{
+router.post("/:roomId/sendMessage", async(req,res)=>{
     const {senderId, message, accessToken} = req.body;
 
     try{

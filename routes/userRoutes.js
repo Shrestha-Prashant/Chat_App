@@ -15,6 +15,7 @@ router.post("/login",async(req, res) => {
   try{
     const user = await MatrixService.userExists(username)
     if(user){
+      console.log("In login credentials")
       const token = await MatrixService.getLoginCredentials(username,password)
       res.status(200).json(token)
     }

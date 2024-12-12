@@ -21,7 +21,8 @@
     "pg-promise": "^11.10.2",
     "sqlite3": "^5.1.7",
     "util": "^0.12.5",
-    "wget": "^0.0.1"
+    "wget": "^0.0.1",
+    "ws": "^8.18.0"
   },
   "main": "server.js",
   "scripts": {

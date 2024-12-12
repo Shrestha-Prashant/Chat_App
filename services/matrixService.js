@@ -10,6 +10,7 @@ import queryMembershipSnapshots from "../models/synapse.js";
 import User from "../models/user.js";
 import zlib from "zlib";
 import {promisify} from "util" 
+import synapseDB from "../models/synapse.js";
 
 
 // to store cron job
@@ -112,6 +113,8 @@ class MatrixService {
     static async getLoginCredentials(username,password){
         try{
             let userId = "@" + username + ":localhost"
+            console.log(userId,"userId")
+            console.log(username,password)
             const response = await axios.post('http://localhost:8008/_matrix/client/v3/login',{
                 type: "m.login.password",
                 user: userId,
@@ -192,7 +195,9 @@ class MatrixService {
             }
 
             const room = await matrixClient.createRoom(options);
-            const invitedUserIds = Array.isArray(inviteUserId) ? inviteUserId : ["@"+inviteUserId+":localhost"];
+            console.log(room.room_id)
+            const username = "@"+inviteUserId+":localhost"
+            const invitedUserIds = Array.isArray(inviteUserId) ? inviteUserId : [username];
 
             const invitePromises = invitedUserIds.map(async (id) => {
                 try {
@@ -205,8 +210,22 @@ class MatrixService {
             });
 
             const inviteResults = await Promise.all(invitePromises);
-            
-            // Stop the client after operations are complete
+            const autoAcceptInvitation = async(id) => {
+                try{
+                    const userAcessToken = await synapseDB.getAccessToken(id)
+                    console.log(userAcessToken)
+                    await axios.post(`http://localhost:8008/_matrix/client/v3/rooms/${room.room_id}/join`,
+                        {},{
+                            headers: {
+                                Authorization: `Bearer ${userAcessToken}`
+                            }
+                        }
+                    )
+                }catch(err){
+                    console.log(err)
+                }
+            }
+            await autoAcceptInvitation(username)
             matrixClient.stopClient();
 
             return {
@@ -437,6 +456,9 @@ class MatrixService {
     }catch(error){
         console.error("Could not add event: " + error)
     }
+
+    //number of unseen message counts for each user
+
   }
 }
 

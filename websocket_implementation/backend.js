@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import sdk from "matrix-js-sdk";
 import moment from "moment-timezone";
-import Chatbot from "./Chatbot"; // Import your chatbot logic
+import Chatbot from "./Chatbot"; 
 
 const startMatrixSyncWithWebSocket = async (userId, accessToken, port = 8080) => {
   // WebSocket Server
@@ -26,7 +26,7 @@ const startMatrixSyncWithWebSocket = async (userId, accessToken, port = 8080) =>
 
     // Event Listener for Matrix messages
     client.on("Room.timeline", async (event, room) => {
-      if (event.getType() === "m.room.message") {
+      if (event.getType() === "m.room.message" || event.getType() === "m.room.file" || event.getType() === "m.room.notice") {
         const content = event.getContent();
         const body = content.body;
 
