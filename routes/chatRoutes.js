@@ -17,7 +17,7 @@ router.post("/register", async(req,res)=> {
 });
 
 //Creating a chat room
-router.post("/createRoom", authenticateToken, async(req,res)=>{
+router.post("/createRoom", async(req,res)=>{
     //send isGroupChat from frontend as true or false
     // userId -> matrix user id, accessToken -> matrix access token, inviteUserId -> request receiver userI
     const {userId, accessToken, inviteUserId, isGroupChat,roomName=null} = req.body

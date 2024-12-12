@@ -168,7 +168,7 @@ class MatrixService {
                         type: 'm.room.preview_urls',
                         content: {
                             allow: true,
-                            allow_domains: ['*']
+                            allow_domains: ['http://localhost:3000']
                         },
                         state_key: ''
                     }
@@ -196,7 +196,7 @@ class MatrixService {
             }
 
             const room = await matrixClient.createRoom(options);
-            const invitedUserIds = Array.isArray(inviteUserId) ? inviteUserId : [inviteUserId];
+            const invitedUserIds = Array.isArray(inviteUserId) ? inviteUserId : ["@"+inviteUserId+":localhost"];
 
             const invitePromises = invitedUserIds.map(async (id) => {
                 try {
