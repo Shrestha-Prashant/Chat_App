@@ -15,13 +15,11 @@ router.post("/login",async(req, res) => {
   try{
     const user = await MatrixService.userExists(username)
     if(user){
-      console.log("user exists")
       const token = await MatrixService.getLoginCredentials(username,password)
       res.status(200).json(token)
     }
     else{
     const matrixRegistration = await MatrixService.registerUser(username,password)
-    console.log(matrixRegistration)
     if(!matrixRegistration){
       res.status(500).json("User registration into matrix failed")
     }
@@ -30,7 +28,6 @@ router.post("/login",async(req, res) => {
     }
   }catch(error){
     res.status(error.status).json(error)
-    console.error("Check for error")
   }
   });
 
@@ -38,9 +35,7 @@ router.post("/login",async(req, res) => {
 router.get("/profile", authenticateToken, async(req,res)=>{
   try{
     const user = await User.findByUsername(req.body.username);
-    console.log(user)
     if(!user) return res.status(404).json({error:"User not found"});
-
     res.json({message: "Profile data",user});
   }catch(error){
     res.status(500).json({error: "Failed to retrieve profile"});

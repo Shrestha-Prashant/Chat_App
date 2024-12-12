@@ -35,7 +35,6 @@ const {roomId, userId, accessToken} = req.body;
 
     try{
         const response = await MatrixService.addUserToRoom(roomId, userId, accessToken);
-        console.log(response)
         res.status(200).json({message: "User invited sucessfully"})
     }catch(error){
         res.status(500).json({error:"Failed ot invite user", details: error.message});

@@ -54,7 +54,6 @@ class MatrixService {
     // to check if user exists already
     static async userExists(username){
         try{
-            console.log("userExists")
             const userId = "@" + username + ":localhost"
             const url = `http://localhost:8008/_synapse/admin/v2/users/${userId}`
             const user = await axios.get(url,{
@@ -86,7 +85,6 @@ class MatrixService {
             );
              
             const nonce = nonceResponse.data.nonce;
-            console.log(nonce)
             const response = await axios.post(
                 url,
                 {
@@ -119,8 +117,6 @@ class MatrixService {
                 user: userId,
                 password: password
             })
-            // console.log(response)
-            console.log("response data : " + response.data)
             return response.data
         }catch(err){
             console.error("Error in getting user token: " + err)
@@ -239,7 +235,6 @@ class MatrixService {
             const user_exists = await MatrixClient(userId,accessToken);
             if(user_exists){
                 const response = await queryMembershipSnapshots(userId);
-                console.log(`Results of userId ${userId}:`, response)
                 return response;
             }
         } catch (error) {
