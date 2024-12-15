@@ -390,7 +390,7 @@ class MatrixService {
         try{
             const matrixClient = await MatrixClient(userId,accessToken);
             const response = await matrixClient.roomInitialSync(roomId);
-            console.log(response)
+            console.log(response.messages)
             return response.messages;
         }catch(error){
             console.error("Failed to retrieve messages:", error.message);

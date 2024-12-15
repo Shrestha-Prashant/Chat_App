@@ -41,7 +41,14 @@ router.post("/createRoom", async(req,res)=>{
                     accessToken: accessToken
                 }
             })
-            res.status(200).json(chatHistory.data)
+            res.status(200).json({
+                room: {
+                    room: {
+                        room_id: usersPresentRoomId
+                    }
+                },
+                message_history: chatHistory.data
+            });
         }
         else{
             const room = await MatrixService.createRoom(userId,accessToken,inviteUserId,isGroupChat, roomName);
@@ -118,9 +125,8 @@ router.post("/:roomId/sendMessage", async(req,res)=>{
 
 //Getting message from a room
 router.get("/:roomId/messages", async(req,res)=>{
-// router.get("/:roomId/messages", authenticateToken, async(req,res)=>{
     console.log("get message")
-const {roomId} = req.params;
+    const {roomId} = req.params;
     const {userId, accessToken} = req.query;
     console.log(roomId,userId,accessToken)
 
@@ -129,6 +135,7 @@ const {roomId} = req.params;
         const messages = response.chunk
             .filter(obj => obj.type == 'm.room.message')  
             .map(obj=> ({
+                    msgId: obj.event_id,
                     senderId: obj.sender,
                     message: obj.content.msgtype === "m.text" ? obj.content.body : obj.content.file
             }))
