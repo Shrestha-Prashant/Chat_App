@@ -200,6 +200,7 @@ router.post("/sendFile", async(req,res)=>{
     }
 })
 
+// Receive files
 router.post("/getFile",async (req,res)=>{
     const {contentUri} = req.body;
     try{
@@ -224,10 +225,27 @@ router.post("/deleteFile", async(req,res)=>{
 router.post("/status",async (req,res)=>{
     const {userId,msgId,accessToken,roomId} = req.body;
     try{
-        const response = await MatrixService.updateStatus(userId,msgId,accessToken,roomId)
-        return res.status(200).json(response)
+        const statusEvent = await MatrixService.updateStatus(userId,msgId,accessToken,roomId)
+        res.status(200).json("Message status update to seen.")
     }catch(err){
         return res.status(400).json(err)
+    }
+})
+
+
+router.get('/status',async (req,res)=>{
+    try{
+        const {eventId,accessToken} = req.query;
+        const statusEvent = await MatrixService.getUpdatedStatus(eventId,accessToken) 
+        res.status(200).json({
+            type: statusEvent.type,
+            roomId: statusEvent.room_id,
+            seenBy: statusEvent.content.seenBy,
+            timestamp: statusEvent.content.timestamp,
+            seenMsgId: statusEvent.content.eventId
+        })
+    }catch(err){
+        res.status(400).json(err)
     }
 })
 

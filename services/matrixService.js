@@ -469,8 +469,8 @@ class MatrixService {
             timestamp: new Date().toISOString(),
             eventId: msgId
         }
-        const response = await matrixClient.sendEvent(roomId,"m.seen", content)
-        console.log(response)
+        const statusEvent = await matrixClient.sendEvent(roomId,"m.seen", content)
+        console.log(statusEvent)
     }catch(error){
         console.error("Could not add event: " + error)
     }
@@ -478,6 +478,21 @@ class MatrixService {
     //number of unseen message counts for each user
 
   }
+
+  static async getUpdatedStatus(eventId,accessToken){
+    try{
+        const response = await axios.get(`http://localhost:8008/_matrix/client/r0/events/${encodeURIComponent(eventId)}`,{
+            headers: {
+                Authorization : `Bearer ${accessToken}`,
+            }
+        })
+        console.log(response.data)
+        return response.data;
+    }catch(err){
+        console.Error(err)
+    }
+  }
+
 }
 
 export default MatrixService;
