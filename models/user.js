@@ -83,6 +83,28 @@ class User{
             console.error("Error in saving content information: " + error.message)
         }
     }
+
+    static async storeUsersRoom(user1,user2,roomId){
+        try{
+            console.log("inside store info in room")
+            console.log(user1,user2)
+            const query = `INSERT INTO room(user1,user2,room_id) VALUES($1,$2,$3)`
+            await db.none(query,[user1,user2,roomId])
+        }catch(err){
+            console.Error(err)
+        }
+    }
+
+    static async getUsersRoom(user1,user2){
+        try{
+            const query = `SELECT room_id FROM room WHERE (user1 ilike $1 OR user1 ilike $2) AND (user2 ilike $3 OR user2 ilike $4)`
+            const roomId = await db.oneOrNone(query,[user1,user2,user1,user2])
+            console.log(roomId)
+            return roomId
+        }catch(err){
+            console.Error(err)
+        }
+    }
 }
 
 export default User;

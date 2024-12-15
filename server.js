@@ -17,7 +17,7 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization']
 }
 
-app.use(bodyParser.json({limit:'10MB'}));
+app.use(bodyParser.json({limit:'50MB'}));
 
 app.use('/api/users',userRoutes)
 app.use('/api/chats',chatRoutes)
@@ -28,7 +28,7 @@ app.get("/", (req,res)=>{
     res.send("Chat application is running");
 });
 
-app.listen(port, ()=>{
+app.listen(port,()=>{
     console.log(`Server is running on http://localhost:${port}`);
 });
 

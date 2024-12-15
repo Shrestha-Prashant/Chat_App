@@ -75,6 +75,7 @@ function generateMac(nonce, user, password, admin=false, userType=null, sharedSe
 class MatrixService {
     // to check if user exists already
     static async userExists(username){
+        console.log("inside user exists")
         try{
             const userId = "@" + username + ":localhost"
             const url = `http://localhost:8008/_synapse/admin/v2/users/${userId}`
@@ -143,6 +144,7 @@ class MatrixService {
             })
             return response.data
         }catch(err){
+            console.log(err)
             console.error("Error in getting user token: " + err)
         }
     }
@@ -187,7 +189,7 @@ class MatrixService {
                         type: 'm.room.preview_urls',
                         content: {
                             allow: true,
-                            allow_domains: ['http://localhost:3000']
+                            allow_domains: ['*'] ,
                         },
                         state_key: ''
                     }
@@ -443,12 +445,9 @@ class MatrixService {
 
    static async getContents(contentUri){
     try{
-            // const contents = matrixClient.getContent(contentUri)
             const [_, serverName, mediaId] = contentUri.match(/^mxc:\/\/([^/]+)\/(.+)$/);
-            // Construct the download URL
             const downloadUrl = `http://localhost:8008/_matrix/media/v3/download/${serverName}/${mediaId}`;
-
-            // Fetch the file
+            console.log(downloadUrl)
             const content = await axios.get(downloadUrl, { responseType: "arraybuffer" });
             const compressedData = Buffer.from(content.data)
             const decompress_data = await decompress(compressedData)

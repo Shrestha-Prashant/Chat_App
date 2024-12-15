@@ -3,6 +3,7 @@ import authenticateToken from "../middleware/auth.js";
 import MatrixService from "../services/matrixService.js";
 import Chatbot from "../middleware/chatBot.js";
 import axios from "axios";
+import User from "../models/user.js";
 
 const router = express.Router();
 
@@ -23,16 +24,19 @@ router.post("/createRoom", async(req,res)=>{
     const {userId, accessToken, inviteUserId, isGroupChat,roomName=null} = req.body
     try{
         const username = userId.split(':')[0].substring(1)
-        const url = `http://localhost:3000/api/chats/loadrooms`
-        const roomsInvovlingUsers = await axios.get(url,{
-            params: {
-                userId: userId,
-                accessToken: accessToken
-            }
-        })
-        const usersPresentRoomId = Object.entries(roomsInvovlingUsers.data).find(([key,users]) => {
-            return users.includes(username) && users.includes(inviteUserId)
-        })?.[0]
+        // const url = `http://localhost:3000/api/chats/loadrooms`
+        // const roomsInvovlingUsers = await axios.get(url,{
+        //     params: {
+        //         userId: userId,
+        //         accessToken: accessToken
+        //     }
+        // })
+        // const usersPresentRoomId = Object.entries(roomsInvovlingUsers.data).find(([key,users]) => {
+        //     return users.includes(username) && users.includes(inviteUserId)
+        // })?.[0]
+        let usersPresentRoomId = await User.getUsersRoom(userId,"@"+inviteUserId+":localhost")
+        console.log("usersPresentRoomId: ", usersPresentRoomId)
+        usersPresentRoomId = usersPresentRoomId.room_id
         if(usersPresentRoomId){
             const _url = `http://localhost:3000/api/chats/${encodeURIComponent(usersPresentRoomId)}/messages`
             const chatHistory = await axios.get(_url,{
@@ -43,16 +47,33 @@ router.post("/createRoom", async(req,res)=>{
             })
             res.status(200).json({
                 room: {
-                    room: {
                         room_id: usersPresentRoomId
-                    }
                 },
                 message_history: chatHistory.data
             });
         }
         else{
+            console.log(userId, accessToken)
             const room = await MatrixService.createRoom(userId,accessToken,inviteUserId,isGroupChat, roomName);
-            res.status(201).json({message:"Room created", room});
+            console.log("room: ", room)
+            console.log(room.room.room_id)
+            if(room){
+                // const roomStored = await User.storeUsersRoom(userId,inviteUserId)
+                // if(roomStored){
+
+                // }
+                User.storeUsersRoom(userId,"@"+inviteUserId+":localhost",room.room.room_id).then(()=>{
+                    console.log("inside then")
+                    res.status(201).json({message:"Room created", room});
+                }).catch((err)=>{
+                    //delete users room
+                    console.log("inside error")
+                    res.status(500).json(err);
+                })
+            }
+            else{
+                res.status(500).json("Room not created");
+            }
         }
     }catch(error){
         console.log(error)
